@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Surprise!</title>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff2a8d;
+            --secondary: #9a21fd;
+            --accent: #00f2fe;
+            --bg-dark: #0a0512;
+            --text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Fredoka', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ambient-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 42, 141, 0.25) 0%, rgba(154, 33, 253, 0.15) 50%, rgba(0,0,0,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 860px;
+            background: linear-gradient(180deg, #130924 0%, #08030f 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 50px rgba(154, 33, 253, 0.3);
+            border-radius: 0;
+        }
+
+        @media (min-width: 480px) {
+            .app-container {
+                border-radius: 28px;
+                height: 92vh;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .bunting-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            opacity: 0.9;
+        }
+
+        .flag-string {
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 Q250,90 500,0 Q750,90 1000,0 L1000,0 L0,0 Z' fill='none' stroke='%20%23ffffff' stroke-opacity='0.2' stroke-width='2'/%3E%3Cpolygon points='20,7 60,7 40,65' fill='%23ff0055'/%3E%3Cpolygon points='80,18 120,18 100,75' fill='%2300e5ff'/%3E%3Cpolygon points='140,27 180,27 160,82' fill='%23ffbe0b'/%3E%3Cpolygon points='200,33 240,33 220,86' fill='%23ff007f'/%3E%3Cpolygon points='260,34 300,34 280,85' fill='%238ac926'/%3E%3Cpolygon points='320,31 360,31 340,82' fill='%23ff595e'/%3E%3Cpolygon points='380,24 420,24 400,75' fill='%231982c4'/%3E%3Cpolygon points='440,14 480,14 460,65' fill='%236a4c93'/%3E%3Cpolygon points='520,14 560,14 540,65' fill='%23ff0055'/%3E%3Cpolygon points='580,24 620,24 600,75' fill='%2300e5ff'/%3E%3Cpolygon points='640,31 680,31 660,82' fill='%23ffbe0b'/%3E%3Cpolygon points='700,34 740,34 720,85' fill='%238ac926'/%3E%3Cpolygon points='760,33 800,33 780,86' fill='%23ff007f'/%3E%3Cpolygon points='820,27 860,27 840,82' fill='%23ff595e'/%3E%3Cpolygon points='880,18 920,18 900,75' fill='%231982c4'/%3E%3Cpolygon points='940,7 980,7 960,65' fill='%236a4c93'/%3E%3C/svg%3E");
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 24px;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: scale(0.95);
+            z-index: 2;
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            z-index: 5;
+        }
+
+        h1, h2 {
+            font-family: 'Dancing Script', cursive;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff71b2 0%, #b562fe 50%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            text-shadow: 0 4px 20px rgba(255, 42, 141, 0.3);
+        }
+
+        h1 { font-size: 2.8rem; line-height: 1.2; }
+        h2 { font-size: 2.3rem; line-height: 1.2; }
+
+        p.subtitle {
+            color: #d1c4e9;
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .btn-action {
+            background: linear-gradient(90deg, #ff2a8d, #9a21fd);
+            color: white;
+            border: none;
+            padding: 14px 36px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 42, 141, 0.4), 0 0 15px rgba(154, 33, 253, 0.3);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            outline: none;
+        }
+
+        .btn-action:hover, .btn-action:active {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 30px rgba(255, 42, 141, 0.6), 0 0 20px rgba(154, 33, 253, 0.5);
+        }
+
+        .character-img {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 15px rgba(255, 42, 141, 0.3));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+
+        .countdown-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(20, 10, 35, 0.6);
+            border: 4px solid transparent;
+            background-image: linear-gradient(#130924, #130924), linear-gradient(135deg, #ff2a8d, #00f2fe);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5rem;
+            font-weight: 700;
+            color: #ff71b2;
+            box-shadow: 0 0 35px rgba(255, 42, 141, 0.5);
+            margin-bottom: 30px;
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { box-shadow: 0 0 20px rgba(255, 42, 141, 0.4), inset 0 0 15px rgba(0, 242, 254, 0.2); }
+            to { box-shadow: 0 0 45px rgba(255, 42, 141, 0.8), inset 0 0 25px rgba(0, 242, 254, 0.4); }
+        }
+
+        .cake-wrapper {
+            position: relative;
+            width: 220px;
+            height: 200px;
+            margin: 20px 0;
+        }
+
+        .cake {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 140px;
+            background: #4a2511;
+            border-radius: 20px 20px 10px 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 -10px 0 #32170a;
+            overflow: visible;
+        }
+
+        .cake-layer-middle {
+            position: absolute;
+            top: 45px;
+            width: 100%;
+            height: 15px;
+            background: #ffb7d5;
+        }
+
+        .cake-frosting {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 45px;
+            background: #ffffff;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 4px 10px rgba(255,255,255,0.3);
+        }
+
+        .cake-frosting::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: radial-gradient(circle at 10px 0, #ffffff 12px, transparent 13px);
+            background-size: 22px 20px;
+            background-repeat: repeat-x;
+        }
+
+        .candle {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 45px;
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .candle-wick {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 8px;
+            background: #222;
+        }
+
+        .flame {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 16px;
+            height: 24px;
+            background: radial-gradient(ellipse at bottom, #ffee55 0%, #ff8800 60%, transparent 100%);
+            border-radius: 50% 50% 35% 35%;
+            filter: drop-shadow(0 0 10px #ff9900);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: bottom center;
+        }
+
+        .flame.lit {
+            transform: translateX(-50%) scale(1);
+            animation: flicker 0.8s infinite alternate ease-in-out;
+        }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1) rotate(-2deg); }
+            100% { transform: translateX(-50%) scale(1.1) rotate(2deg); }
+        }
+
+        .balloons-grid {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 15px;
+            height: 260px;
+            width: 100%;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .balloon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .balloon-item:hover {
+            transform: scale(1.08);
+        }
+
+        .balloon-body {
+            width: 65px;
+            height: 80px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            position: relative;
+            box-shadow: inset -8px -8px 12px rgba(0,0,0,0.3), inset 8px 8px 12px rgba(255,255,255,0.4);
+        }
+
+        .balloon-knot {
+            width: 8px;
+            height: 6px;
+            background: inherit;
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            margin-top: -1px;
+        }
+
+        .balloon-string {
+            width: 2px;
+            height: 100px;
+            background: rgba(255,255,255,0.25);
+        }
+
+        .balloon-item.popped {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .b-pink .balloon-body { background: #ff2a8d; }
+        .b-yellow .balloon-body { background: #ffbe0b; }
+        .b-green .balloon-body { background: #06d6a0; }
+        .b-blue .balloon-body { background: #00f2fe; }
+
+        .card-container {
+            width: 290px;
+            height: 380px;
+            perspective: 1000px;
+            margin: 15px 0;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .card-back {
+            background: #ffffff;
+            color: #2b1055;
+            transform: rotateY(180deg);
+            overflow-y: auto;
+            text-align: center;
+        }
+
+        .card-back p {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            font-family: 'Fredoka', sans-serif;
+            color: #333;
+        }
+
+        .gift-box {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            cursor: pointer;
+            margin: 30px 0;
+            transition: transform 0.3s;
+        }
+
+        .gift-box:hover {
+            transform: scale(1.05);
+        }
+
+        .gift-body {
+            width: 100%;
+            height: 110px;
+            position: absolute;
+            bottom: 0;
+            background: #ff2a8d;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        .gift-lid {
+            width: 108%;
+            height: 35px;
+            position: absolute;
+            top: 10px;
+            left: -4%;
+            background: #ff52a4;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 2;
+            transition: transform 0.5s ease;
+        }
+
+        .gift-ribbon-v {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        .gift-ribbon-h {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            height: 26px;
+            background: #ffffff;
+        }
+
+        .gift-box.open .gift-lid {
+            transform: translateY(-60px) rotate(-15deg);
+        }
+
+        .footer-tag {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 10;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow"></div>
+
+    <div class="app-container">
+        <div class="bunting-container">
+            <div class="flag-string"></div>
+        </div>
+
+        <!-- SCREEN 1: COUNTDOWN -->
+        <div id="screen-1" class="screen active">
+            <div class="countdown-circle" id="countdown-num">3</div>
+            <h2>Crafting your special moment...</h2>
+        </div>
+
+        <!-- SCREEN 2: INTRO SURPRISE -->
+        <div id="screen-2" class="screen">
+            <svg class="character-img" viewBox="0 0 100 100">
+                <circle cx="50" cy="55" r="35" fill="#ffffff"/>
+                <path d="M25 30 L35 50 L20 48 Z" fill="#ffffff" stroke="#ffb7d5" stroke-width="2"/>
+                <path d="M75 30 L80 48 L65 50 Z" fill="#ffffff" stroke="#ffb7d5" stroke-width="2"/>
+                <circle cx="38" cy="50" r="4" fill="#333"/>
+                <circle cx="62" cy="50" r="4" fill="#333"/>
+                <path d="M46 58 Q50 62 54 58" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                <ellipse cx="30" cy="56" rx="5" ry="3" fill="#ffb7d5"/>
+                <ellipse cx="70" cy="56" rx="5" ry="3" fill="#ffb7d5"/>
+            </svg>
+            <h1>A Cutiepie was born today, 14 years ago!</h1>
+            <p class="subtitle">Yes, it's YOU! A little surprise awaits...</p>
+            <button class="btn-action" onclick="goToScreen(3)">Start the surprise ✨</button>
+        </div>
+
+        <!-- SCREEN 3: CAKE & CANDLE -->
+        <div id="screen-3" class="screen">
+            <h2 id="cake-title">Decorate & Light the Candle!</h2>
+            <p class="subtitle" id="cake-sub">Tap below to prepare the cake</p>
+
+            <div class="cake-wrapper">
+                <div class="candle">
+                    <div class="candle-wick"></div>
+                    <div class="flame" id="candle-flame"></div>
+                </div>
+                <div class="cake">
+                    <div class="cake-frosting"></div>
+                    <div class="cake-layer-middle"></div>
+                </div>
+            </div>
+
+            <button class="btn-action" id="cake-btn" onclick="handleCakeAction()">🪄 Decorate</button>
+        </div>
+
+        <!-- SCREEN 4: BALLOON POP GAME -->
+        <div id="screen-4" class="screen">
+            <h2>Pop all 4 balloons 🎈</h2>
+            <p class="subtitle">Tap each balloon to reveal the hidden message!</p>
+
+            <div style="height: 30px;">
+                <div id="revealed-phrase" style="font-size: 1.4rem; font-weight: 700; color: #ff007f;"></div>
+            </div>
+
+            <div class="balloons-grid">
+                <div class="balloon-item b-pink" onclick="popBalloon(this, 'You')">
+                    <div class="balloon-body"></div>
+                    <div class="balloon-knot"></div>
+                    <div class="balloon-string"></div>
+                </div>
+                <div class="balloon-item b-yellow" onclick="popBalloon(this, 'are')">
+                    <div class="balloon-body"></div>
+                    <div class="balloon-knot"></div>
+                    <div class="balloon-string"></div>
+                </div>
+                <div class="balloon-item b-green" onclick="popBalloon(this, 'a')">
+                    <div class="balloon-body"></div>
+                    <div class="balloon-knot"></div>
+                    <div class="balloon-string"></div>
+                </div>
+                <div class="balloon-item b-blue" onclick="popBalloon(this, 'Cutiee!')">
+                    <div class="balloon-body"></div>
+                    <div class="balloon-knot"></div>
+                    <div class="balloon-string"></div>
+                </div>
+            </div>
+
+            <button class="btn-action hidden" id="balloon-next-btn" onclick="goToScreen(5)">Next ➔</button>
+        </div>
+
+        <!-- SCREEN 5: SPECIAL MESSAGE CARD -->
+        <div id="screen-5" class="screen">
+            <h2>A Special Message 💌</h2>
+            <p class="subtitle">Tap the card to open</p>
+
+            <div class="card-container" onclick="flipCard(this)">
+                <div class="card-inner" id="card-inner">
+                    <div class="card-front">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🎈</div>
+                        <h3 style="font-size: 1.8rem; font-family: 'Dancing Script'; color: #fff;">Happy Birthday To You</h3>
+                        <p style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">Tap to Open ➔</p>
+                    </div>
+                    <div class="card-back">
+                        <p><strong>A Cutiepie was born today, 14 years ago!</strong></p>
+                        <p>I hope your 14th birthday is filled with laughter, surprises, and moments that make your heart happy.</p>
+                        <p>You're
